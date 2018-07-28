@@ -3,6 +3,7 @@ package com.minervaboto.erick.renovaominerva;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
@@ -54,15 +55,22 @@ public class RenewActivity extends AppCompatActivity {
     private View mProgressView;
     private View mLoginFormView;
 
+    private SharedPreferences preferences;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_renew);
-        // Set up the login form.
-        mIdView = (EditText) findViewById(R.id.id);
-        resultTextView = (TextView) findViewById(R.id.result_text_view);
 
-        mPasswordView = (EditText) findViewById(R.id.password);
+        preferences = this.getSharedPreferences("Cred", MODE_PRIVATE);
+
+        // Set up the login form.
+        mIdView = findViewById(R.id.id);
+        mIdView.setText(preferences.getString("user_id", ""));
+
+        resultTextView = findViewById(R.id.result_text_view);
+
+        mPasswordView = findViewById(R.id.password);
         mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView textView, int id, KeyEvent keyEvent) {
@@ -74,7 +82,7 @@ public class RenewActivity extends AppCompatActivity {
             }
         });
 
-        Button mEmailSignInButton = (Button) findViewById(R.id.email_sign_in_button);
+        Button mEmailSignInButton = findViewById(R.id.email_sign_in_button);
         mEmailSignInButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -205,7 +213,9 @@ public class RenewActivity extends AppCompatActivity {
             showProgress(false);
 
             resultTextView.setText(result);
-
+            preferences.edit()
+                        .putString("user_id", mIdView.getText().toString())
+                        .commit();
         }
 
         @Override
