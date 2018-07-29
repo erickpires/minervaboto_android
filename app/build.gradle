@@ -2,11 +2,11 @@ apply plugin: 'com.android.application'
 apply plugin: 'com.chaquo.python'
 
 android {
-    compileSdkVersion 26
+    compileSdkVersion 28
     defaultConfig {
         applicationId "com.minervaboto.erick.renovaominerva"
         minSdkVersion 15
-        targetSdkVersion 26
+        targetSdkVersion 28
         versionCode 1
         versionName "0.4"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
