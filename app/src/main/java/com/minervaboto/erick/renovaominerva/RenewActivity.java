@@ -3,40 +3,27 @@ package com.minervaboto.erick.renovaominerva;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
+import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
-import android.support.annotation.NonNull;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
-import android.app.LoaderManager.LoaderCallbacks;
 
-import android.content.CursorLoader;
-import android.content.Loader;
-import android.database.Cursor;
-import android.net.Uri;
 import android.os.AsyncTask;
 
 import android.os.Build;
 import android.os.Bundle;
-import android.provider.ContactsContract;
 import android.text.TextUtils;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.inputmethod.EditorInfo;
-import android.widget.ArrayAdapter;
-import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
 import com.chaquo.python.PyObject;
 import com.chaquo.python.Python;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static android.Manifest.permission.READ_CONTACTS;
 
 /**
  * A login screen that offers login via email/password.
@@ -51,7 +38,6 @@ public class RenewActivity extends AppCompatActivity {
     // UI references.
     private EditText mIdView;
     private EditText mPasswordView;
-    private TextView resultTextView;
     private View mProgressView;
     private View mLoginFormView;
 
@@ -68,9 +54,8 @@ public class RenewActivity extends AppCompatActivity {
         mIdView = findViewById(R.id.id);
         mIdView.setText(preferences.getString("user_id", ""));
 
-        resultTextView = findViewById(R.id.result_text_view);
-
         mPasswordView = findViewById(R.id.password);
+        mPasswordView.setText(preferences.getString("user_pass", ""));
         mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView textView, int id, KeyEvent keyEvent) {
@@ -120,10 +105,6 @@ public class RenewActivity extends AppCompatActivity {
             mIdView.setError(getString(R.string.error_field_required));
             focusView = mIdView;
             cancel = true;
-        } else if (!isIdValid(id)) {
-            mIdView.setError(getString(R.string.error_invalid_id));
-            focusView = mIdView;
-            cancel = true;
         }
 
         if (cancel) {
@@ -134,14 +115,9 @@ public class RenewActivity extends AppCompatActivity {
             // Show a progress spinner, and kick off a background task to
             // perform the user login attempt.
             showProgress(true);
-            mAuthTask = new UserLoginTask(id, password);
+            mAuthTask = new UserLoginTask(id, password, this);
             mAuthTask.execute((Void) null);
         }
-    }
-
-    private boolean isIdValid(String id) {
-        //TODO: Replace this with your own logic
-        return id.length() == 11;
     }
 
     /**
@@ -187,13 +163,20 @@ public class RenewActivity extends AppCompatActivity {
      */
     public class UserLoginTask extends AsyncTask<Void, Void, Boolean> {
 
+        private final int STATUS_RENEWED = 0;
+        private final int STATUS_ERROR = 1;
+        private final int STATUS_WARNING = 2;
+
         private final String mId;
         private final String mPassword;
         private String result;
+        private int result_status;
+        private Activity mActivity;
 
-        UserLoginTask(String id, String password) {
+        UserLoginTask(String id, String password, Activity activity) {
             mId = id;
             mPassword = password;
+            mActivity = activity;
         }
 
         @Override
@@ -202,6 +185,7 @@ public class RenewActivity extends AppCompatActivity {
             PyObject minervaboto = python.getModule("minervaboto");
             PyObject renewed = minervaboto.callAttr("renew_books", mId, mPassword);
             PyObject renewed_str = minervaboto.callAttr("renewed_to_string", renewed);
+
             result = renewed_str.toString();
 
             return true;
@@ -212,9 +196,21 @@ public class RenewActivity extends AppCompatActivity {
             mAuthTask = null;
             showProgress(false);
 
+            AlertDialog.Builder builder = new AlertDialog.Builder(mActivity);
+            LayoutInflater inflater = mActivity.getLayoutInflater();
+            View dialogView = inflater.inflate(R.layout.result_dialog_layout, null);
+
+            TextView status = dialogView.findViewById(R.id.result_status);
+            status.setText("Renovado!");
+            TextView resultTextView = dialogView.findViewById(R.id.result_data);
             resultTextView.setText(result);
+
+            builder.setView(dialogView);
+            builder.create().show();
+
             preferences.edit()
                         .putString("user_id", mIdView.getText().toString())
+                        .putString("user_pass", mPasswordView.getText().toString())
                         .commit();
         }
 
